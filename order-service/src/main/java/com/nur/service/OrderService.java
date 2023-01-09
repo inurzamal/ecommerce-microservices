@@ -1,5 +1,6 @@
 package com.nur.service;
 
+import com.nur.dto.InventoryResponse;
 import com.nur.dto.OrderLineItemsDto;
 import com.nur.dto.OrderRequest;
 import com.nur.model.Order;
@@ -8,7 +9,9 @@ import com.nur.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.client.WebClient;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -18,6 +21,7 @@ import java.util.UUID;
 public class OrderService {
 
     private final OrderRepository orderRepository;
+    private final WebClient webClient;
 
 //    public OrderService(OrderRepository orderRepository) {
 //        this.orderRepository = orderRepository;
@@ -32,7 +36,25 @@ public class OrderService {
         List<OrderLineItems> orderLineItems = orderLineItemsDtoList.stream().map(this::mapToOrderLineItems).toList();
         order.setOrderLineItemsList(orderLineItems);
 
-        orderRepository.save(order);
+        List<String> skuCodeList = order.getOrderLineItemsList().stream().map(OrderLineItems::getSkuCode).toList();
+
+        //call inventory-service to check if product is in stock or not
+        InventoryResponse[] inventoryResponseArray = webClient.get()
+                .uri("http://localhost:8082/api/inventory",
+                        uriBuilder -> uriBuilder.queryParam("skuCode",skuCodeList).build())
+                .retrieve()
+                .bodyToMono(InventoryResponse[].class)
+                .block();
+
+        boolean allProductsInStock = Arrays.stream(inventoryResponseArray).allMatch(InventoryResponse::getIsInStock);
+
+        if(allProductsInStock){
+            orderRepository.save(order);
+        }else {
+            throw new IllegalArgumentException("Product not in stock");
+        }
+
+
     }
     private OrderLineItems mapToOrderLineItems(OrderLineItemsDto itemDto) {
         OrderLineItems orderLineItems = new OrderLineItems();
