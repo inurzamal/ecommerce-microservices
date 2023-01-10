@@ -19,7 +19,7 @@ public class InventoryController {
     // public boolean isInStock(@PathVariable("sku-code") String skuCode){}
     //http://localhost:8082/api/inventory/hp-pavilion,hp-pavilion-red // multiple value using @PathVariable
 
-    //http://localhost:8082/api/inventory?skuCode=hp-pavilion&skuCode=hp-pavilion-red //using @RequestParam
+    //http://localhost:8082/api/inventory?skuCode=hp-pavilion&skuCode=hp-pavilion-red //using @RequestParam (it uses query parameter)
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     public List<InventoryResponse> isInStock(@RequestParam List<String> skuCode){
