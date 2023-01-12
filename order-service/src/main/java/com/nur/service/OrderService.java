@@ -27,7 +27,7 @@ public class OrderService {
 //        this.orderRepository = orderRepository;
 //    }
 
-    public void placeOrder(OrderRequest orderRequest){
+    public String placeOrder(OrderRequest orderRequest){
 
         Order order = new Order();
         order.setOrderNumber(UUID.randomUUID().toString());
@@ -51,10 +51,11 @@ public class OrderService {
 
         if(allProductsInStock){
             orderRepository.save(order);
-        }else {
+            return "Order placed successfully";
+        }
+        else {
             throw new IllegalArgumentException("Product not in stock");
         }
-
 
     }
     private OrderLineItems mapToOrderLineItems(OrderLineItemsDto itemDto) {
